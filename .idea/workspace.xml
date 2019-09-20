@@ -2,9 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="20698dd0-16a3-4b3a-a8ef-2097da2c3400" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/model/Model.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/model/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/data_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/data_util.py" afterDir="false" />
     </list>
@@ -91,7 +88,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1568890587056</updated>
-      <workItem from="1568890588154" duration="22445000" />
+      <workItem from="1568890588154" duration="30548000" />
+      <workItem from="1568986779143" duration="3967000" />
     </task>
     <servers />
   </component>
@@ -103,13 +101,26 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>
     </option>
   </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/utils/data_util.py</url>
+          <line>168</line>
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/math_module$data_util.coverage" NAME="data_util Coverage Results" MODIFIED="1568977865352" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
+    <SUITE FILE_PATH="coverage/math_module$data_util.coverage" NAME="data_util Coverage Results" MODIFIED="1568990642498" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
   </component>
 </project>

@@ -15,6 +15,8 @@ SELECT_FILES = 100
 MAX_FILES = 4000
 # 方差值小于15的特征会被剔除
 LITTLE_VARIANCE = 15
+# 学习率
+LEARN_RATE = 0.005
 
 
 # 加载csv数据
@@ -57,7 +59,7 @@ def load_memory(file_names):
 # 随机
 data = load_memory(read_resoures())
 
-print(len(data))
+# print(len(data))
 
 label_data = data[:, -1]
 futures_data = data[:, 0:-1]
@@ -65,7 +67,7 @@ futures_data = data[:, 0:-1]
 # print(futures_data.shape) # 数据形状(2861,17)
 
 futures_data = futures_data.astype(np.float64)
-print(futures_data.shape)  # (2861, 17)
+# print(futures_data.shape)  # (2861, 17)
 
 
 # hv 是栅格与发射机的距离d以及栅格与信号线的相对高度
@@ -84,7 +86,7 @@ def culter_hv(h_b, sit_md, sit_ed, position_x, position_y, x, y):
 
     tan = np.tan(np.radians(sit_md + sit_ed))
     h_v = h_b - tan * d
-    return h_v
+    return h_v,d
 
 
 # 计算hvs 返回的是(2861,)
@@ -93,12 +95,13 @@ def culter_hvs(futures_data):
                      futures_data[:, 12], futures_data[:, 13])
 
 
-hv = culter_hvs(futures_data)  # (2861,)
+hv,d = culter_hvs(futures_data)  # (2861,)
 
 futures_data = np.delete(futures_data, [ 5, 6, 1, 2, 12, 13], axis=1)  # (2861, 10)
 
 # 融入特征hv
 futures_data = np.c_[futures_data, hv]  # (2861, 11)
+futures_data = np.c_[futures_data , d]
 
 
 # 方差
@@ -121,9 +124,61 @@ def getIndex(vari):
     return indexs
 
 
-vari = variance(futures_data) # (11,)
+vari = variance(futures_data) # (12,)
 delete_index = getIndex(vari)
 
-futures_data = np.delete(futures_data, delete_index, axis=1) # (*,9)
+futures_data = np.delete(futures_data, delete_index, axis=1) # (*,10)
+# print(futures_data.shape)
+
+# print(futures_data.shape[0])
+
+# rows = futures_data.shape[0]
+
+rows = 1
+
+# 建立模型
+f = tf.placeholder(dtype=tf.float32 ,shape=(100,1))
+h_b = tf.placeholder(dtype=tf.float32 , shape=(100,1))
+alpha = tf.Variable(initial_value=1,dtype=tf.float32)
+h_ue = tf.placeholder(dtype=tf.float32,shape=(100,1))
+d = tf.placeholder(dtype=tf.float32,shape=(100,1))
+RSRP = tf.placeholder(dtype=tf.float32,shape=(100,1))
+p_t = tf.placeholder(dtype=tf.float32,shape=(100,1))
+
+W1 = tf.Variable(initial_value=1,dtype=tf.float32)
+W2 = tf.Variable(initial_value=2,dtype=tf.float32)
+W3 = tf.Variable(initial_value=3,dtype=tf.float32)
+
+PL =  W1*tf.log(f) - W2*tf.log(h_b) - alpha + W3*tf.log(tf.abs(h_ue))*tf.log(d)
+PL = tf.nn.relu(PL)
+RSRP_PRE = p_t - PL
+# RSRP_PRE = tf.nn.relu(RSRP_PRE)
+loss = tf.reduce_sum(tf.square(RSRP_PRE - RSRP))
+# loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=RSRP , logits=RSRP_PRE)
+
+optimizer = tf.train.AdamOptimizer(learning_rate=LEARN_RATE)
+train_op = optimizer.minimize(loss)
+
+init_op = tf.group(tf.global_variables_initializer())
 
 
+x = futures_data[0:100,3].reshape(-1,1)
+# print(x.shape)
+
+label_data = label_data.reshape(-1,1)
+# print(label_data)
+
+
+with tf.Session() as sess:
+    sess.run(init_op)
+
+    for step in range(1):
+        loss_cur = sess.run([loss],feed_dict={
+            f:futures_data[100*step:100*step+100,3].reshape(100,1),
+            h_b:futures_data[100*step:100*step+100,1].reshape(100,1),
+            h_ue:futures_data[100*step:100*step+100,-2].reshape(100,1),
+            d:futures_data[100*step:100*step+100,-1].reshape(100,1),
+            RSRP:label_data[100*step:100*step+100,0].reshape(100,1),
+            p_t:data[100*step:100*step+100,8].reshape(100,1).astype(np.float64)
+        })
+        print(loss_cur)
