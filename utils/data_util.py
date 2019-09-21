@@ -16,8 +16,7 @@ MAX_FILES = 4000
 # 方差值小于15的特征会被剔除
 LITTLE_VARIANCE = 15
 # 学习率
-LEARN_RATE = 0.01
-
+LEARN_RATE = 0.005
 
 # 加载csv数据
 def load_csv_file(path):
@@ -132,28 +131,27 @@ futures_data = np.delete(futures_data, delete_index, axis=1) # (*,10)
 
 # print(futures_data.shape[0])
 
-# rows = futures_data.shape[0]
+rows = 40000
 
-rows = 1
 
 # 建立模型
-f = tf.placeholder(dtype=tf.float32 ,shape=(3000,1))
-h_b = tf.placeholder(dtype=tf.float32 , shape=(3000,1))
+# f = tf.placeholder(dtype=tf.float32 ,shape=(40000,1))
+# h_b = tf.placeholder(dtype=tf.float32 , shape=(40000,1))
 alpha = tf.Variable(initial_value=1,dtype=tf.float32)
-h_ue = tf.placeholder(dtype=tf.float32,shape=(3000,1))
-d = tf.placeholder(dtype=tf.float32,shape=(3000,1))
-RSRP = tf.placeholder(dtype=tf.float32,shape=(3000,1))
-p_t = tf.placeholder(dtype=tf.float32,shape=(3000,1))
+# h_ue = tf.placeholder(dtype=tf.float32,shape=(40000,1))
+# d = tf.placeholder(dtype=tf.float32,shape=(40000,1))
+RSRP = tf.placeholder(dtype=tf.float32,shape=(40000,1))
+p_t = tf.placeholder(dtype=tf.float32,shape=(40000,1))
 
-W1 = tf.Variable(initial_value=1,dtype=tf.float32)
-W2 = tf.Variable(initial_value=2,dtype=tf.float32)
-W3 = tf.Variable(initial_value=3,dtype=tf.float32)
+X = tf.placeholder(dtype=tf.float32 , shape=(rows , 10))
+W = tf.Variable(initial_value=tf.random.normal(shape=(10,1)) ,dtype=tf.float32)
 
-PL =  W1*tf.log(f) - W2*tf.log(h_b) - alpha + W3*tf.log(tf.abs(h_ue))*tf.log(d)
+
+PL =  tf.matmul(X,W) + alpha
 # PL = tf.nn.relu(PL)
 RSRP_PRE = p_t - PL
 #RSRP_PRE = tf.nn.relu(RSRP_PRE)
-loss = tf.sqrt(tf.reduce_sum(tf.square(RSRP_PRE - RSRP)))
+loss = tf.sqrt(tf.reduce_mean(tf.square(RSRP_PRE - RSRP)))
 # loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=RSRP , logits=RSRP_PRE)
 
 optimizer = tf.train.AdamOptimizer(learning_rate=LEARN_RATE)
@@ -161,18 +159,23 @@ train_op = optimizer.minimize(loss)
 
 init_op = tf.group(tf.global_variables_initializer())
 
+# 测试集的op
+test_op = RSRP_PRE
 
-x = futures_data[0:3000,3].reshape(-1,1)
+
+x = futures_data[0:40000,3].reshape(-1,1)
 # print(x.shape)
 
 label_data = label_data.reshape(-1,1)
 # print(label_data)
 
+zz = data[0:rows, 8].reshape(40000, 1).astype(np.float64)
+
 
 with tf.Session() as sess:
     sess.run(init_op)
 
-    for step in range(3000):
+    for step in range(5000):
         # _ , loss_cur = sess.run([train_op , loss],feed_dict={
         #     f:futures_data[100*step:100*step+100,3].reshape(100,1),
         #     h_b:futures_data[100*step:100*step+100,1].reshape(100,1),
@@ -181,12 +184,27 @@ with tf.Session() as sess:
         #     RSRP:label_data[100*step:100*step+100,0].reshape(100,1),
         #     p_t:data[100*step:100*step+100,8].reshape(100,1).astype(np.float64)
         # })
-        _ , loss_cur = sess.run([train_op , loss],feed_dict={
-            f:futures_data[0:3000,3].reshape(3000,1),
-            h_b:futures_data[0:3000,1].reshape(3000,1),
-            h_ue:futures_data[0:3000,-2].reshape(3000,1),
-            d:futures_data[0:3000,-1].reshape(3000,1),
-            RSRP:label_data[0:3000,0].reshape(3000,1),
-            p_t:data[0:3000,8].reshape(3000,1).astype(np.float64)
+        # _ , loss_cur = sess.run([train_op , loss],feed_dict={
+        #     f:futures_data[0:40000,3].reshape(40000,1),
+        #     h_b:futures_data[0:40000,1].reshape(40000,1),
+        #     h_ue:futures_data[0:40000,-2].reshape(40000,1),
+        #     d:futures_data[0:40000,-1].reshape(40000,1),
+        #     RSRP:label_data[0:40000,0].reshape(40000,1),
+        #     p_t:data[0:40000,8].reshape(40000,1).astype(np.float64)
+        # # })
+
+        _, loss_cur=sess.run([train_op, loss], feed_dict={
+            X:futures_data[0:rows,:],
+            RSRP: label_data[0:rows, 0].reshape(40000, 1),
+            p_t: data[0:rows, 8].reshape(40000, 1).astype(np.float64)
         })
-        print(loss_cur)
+
+        if step % 100 == 0:
+            print(loss_cur)
+    print(label_data[rows:rows+40000,:])
+    pre = sess.run([test_op], feed_dict={
+        X: futures_data[rows:rows+40000, :],
+        p_t: data[rows:rows+40000, 8].reshape(40000, 1).astype(np.float64)
+    })
+
+    print(pre)
