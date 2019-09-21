@@ -137,6 +137,8 @@ rows = 100000
 
 
 
+
+
 # 建立模型
 # f = tf.placeholder(dtype=tf.float32 ,shape=(100000,1))
 # h_b = tf.placeholder(dtype=tf.float32 , shape=(100000,1))
